@@ -55,7 +55,7 @@ class MainActivity : android.app.Activity() {
         val search = EditText(this).apply {
             hint = "Buscar lugar o dirección"
             textSize = 15f
-            singleLine = true
+            setSingleLine(true)
             setTextColor(0xFFFFFFFF.toInt())
             setHintTextColor(0xFFB8C3D3.toInt())
             setBackgroundColor(0xFF263449.toInt())
