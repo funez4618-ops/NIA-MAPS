@@ -26,6 +26,8 @@ import org.maplibre.android.camera.CameraUpdateFactory
 import org.maplibre.android.geometry.LatLng
 import org.maplibre.android.maps.MapLibreMap
 import org.maplibre.android.maps.MapView
+import org.maplibre.android.module.http.HttpRequestUtil
+import okhttp3.OkHttpClient
 import java.net.HttpURLConnection
 import java.net.URL
 import java.net.URLEncoder
@@ -44,6 +46,17 @@ class MainActivity : android.app.Activity() {
         super.onCreate(savedInstanceState)
         window.statusBarColor = Color.rgb(16, 24, 39)
         window.navigationBarColor = Color.rgb(16, 24, 39)
+        // OSM blocks generic SDK User-Agent values. Identify this app on every tile request.
+        val mapHttpClient = OkHttpClient.Builder()
+            .addInterceptor { chain ->
+                val request = chain.request()
+                val identified = request.newBuilder()
+                    .header("User-Agent", "NIA-MAPS/1.1 (Android; https://github.com/funez4618-ops/NIA-MAPS)")
+                    .build()
+                chain.proceed(identified)
+            }
+            .build()
+        HttpRequestUtil.setOkHttpClient(mapHttpClient)
         MapLibre.getInstance(this)
 
         val root = FrameLayout(this).apply { setBackgroundColor(Color.rgb(232, 237, 242)) }
@@ -206,6 +219,12 @@ class MainActivity : android.app.Activity() {
         attrParams.setMargins(dp(8), 0, 0, dp(8))
         root.addView(attribution, attrParams)
 
+        mapView.addOnDidFailLoadingMapListener { errorMessage ->
+            runOnUiThread {
+                mapStatus.text = "Error del mapa: " + errorMessage.take(150)
+                mapStatus.visibility = View.VISIBLE
+            }
+        }
         mapView.getMapAsync { readyMap ->
             map = readyMap
             val styleJson = """{
@@ -269,9 +288,11 @@ class MainActivity : android.app.Activity() {
                     requestMethod = "GET"
                     connectTimeout = 12000
                     readTimeout = 12000
-                    setRequestProperty("User-Agent", "NIAMapsAndroid/1.1 (map search)")
+                    setRequestProperty("User-Agent", "NIA-MAPS/1.1 (Android; https://github.com/funez4618-ops/NIA-MAPS)")
                     setRequestProperty("Accept", "application/json")
                 }
+                val responseCode = connection.responseCode
+                if (responseCode !in 200..299) throw java.io.IOException("HTTP " + responseCode)
                 val response = connection.inputStream.bufferedReader().use { it.readText() }
                 val results = JSONArray(response)
                 runOnUiThread {
@@ -284,10 +305,10 @@ class MainActivity : android.app.Activity() {
                         Toast.makeText(this, "No se encontró ese lugar. Prueba con otra dirección.", Toast.LENGTH_LONG).show()
                     }
                 }
-            } catch (_: Exception) {
+            } catch (error: Exception) {
                 runOnUiThread {
                     mapStatus.visibility = View.GONE
-                    Toast.makeText(this, "No se pudo buscar. Revisa tu conexión e inténtalo otra vez.", Toast.LENGTH_LONG).show()
+                    Toast.makeText(this, "Error al buscar: " + (error.message ?: "sin conexión"), Toast.LENGTH_LONG).show()
                 }
             } finally {
                 connection?.disconnect()
