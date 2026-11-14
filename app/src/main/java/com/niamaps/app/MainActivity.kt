@@ -196,7 +196,7 @@ class MainActivity : android.app.Activity() {
         root.addView(locate, locParams)
 
         val attribution = TextView(this).apply {
-            text = "© OpenStreetMap · © CARTO"
+            text = "© OpenStreetMap contributors"
             textSize = 10f
             setTextColor(Color.rgb(50, 60, 70))
             setPadding(dp(6), dp(3), dp(6), dp(3))
@@ -211,21 +211,16 @@ class MainActivity : android.app.Activity() {
             val styleJson = """{
               "version": 8,
               "sources": {
-                "carto": {
+                "osm": {
                   "type": "raster",
-                  "tiles": [
-                    "https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png",
-                    "https://b.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png",
-                    "https://c.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png",
-                    "https://d.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png"
-                  ],
+                  "tiles": ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
                   "tileSize": 256,
-                  "attribution": "© OpenStreetMap contributors © CARTO"
+                  "attribution": "© OpenStreetMap contributors"
                 }
               },
               "layers": [
                 {"id":"background","type":"background","paint":{"background-color":"#e8edf2"}},
-                {"id":"carto-raster","type":"raster","source":"carto","minzoom":0,"maxzoom":20}
+                {"id":"osm-raster","type":"raster","source":"osm","minzoom":0,"maxzoom":19}
               ]
             }"""
             readyMap.setStyle(styleJson) {
